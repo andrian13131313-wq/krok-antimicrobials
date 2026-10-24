@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1f3864">
+<title>Тренажер — Медична рецептура</title>
+<style>
+:root{
+  --bg:#f5f7fa; --surface:#ffffff; --surface-2:#eef2f7; --ink:#15202b; --muted:#5c6b7a;
+  --line:#dde4ec; --navy:#1f3864; --teal:#0e6e62; --teal-soft:#e7f2ef; --amber:#fdf6e3;
+  --red:#9c2a2a; --red-soft:#f8e9e9; --ok:#137a4e; --shadow:0 1px 2px rgba(15,30,50,.06),0 6px 20px rgba(15,30,50,.06);
+  --radius:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161d; --surface:#181f28; --surface-2:#202935; --ink:#e7edf4; --muted:#9aa8b8;
+    --line:#2b3644; --navy:#9dbbe8; --teal:#5fd0bd; --teal-soft:#16302c; --amber:#2b2519;
+    --red:#ef9a9a; --red-soft:#3a2224; --ok:#6fd39f; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161d; --surface:#181f28; --surface-2:#202935; --ink:#e7edf4; --muted:#9aa8b8;
+  --line:#2b3644; --navy:#9dbbe8; --teal:#5fd0bd; --teal-soft:#16302c; --amber:#2b2519;
+  --red:#ef9a9a; --red-soft:#3a2224; --ok:#6fd39f; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:120px}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%;
+  padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 72px}
+/* підказка для перегляду без JavaScript (iPhone: Telegram, Viber, «Файли») */
+.nojs{max-width:760px;margin:24px auto;padding:18px 20px;border:2px solid #9c2a2a;border-radius:14px;background:#fff7f7;color:#15202b;font-family:Arial,sans-serif}
+.nojs h2{margin:0 0 8px;color:#9c2a2a;font-size:19px}
+.nojs ol{margin:8px 0 0 20px;padding:0}
+.nojs li{margin:4px 0}
+header.top{position:sticky;top:0;z-index:20;background:var(--surface);
+  border-bottom:1px solid var(--line);box-shadow:var(--shadow);padding-top:env(safe-area-inset-top,0px)}
+.top-inner{max-width:900px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.brand{font-weight:700;color:var(--navy);font-size:15px;line-height:1.25;flex:1 1 200px;min-width:0}
+.brand small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.score{font-variant-numeric:tabular-nums;font-weight:700;color:var(--teal);font-size:15px;white-space:nowrap}
+.bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;width:100%}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--navy));width:0;transition:width .3s}
+.iconbtn{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;
+  padding:6px 10px;font-size:13px;cursor:pointer;text-decoration:none;font-family:inherit}
+.iconbtn:hover{border-color:var(--teal)}
+nav.tabs{display:flex;gap:6px;overflow-x:auto;padding:12px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;
+  padding:8px 14px;font-size:14px;white-space:nowrap;cursor:pointer;font-weight:600;font-family:inherit;flex:0 0 auto}
+.tab.on{background:var(--navy);border-color:var(--navy);color:var(--surface)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0 2px}
+select{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:7px 10px;max-width:100%}
+.topicbox{margin:12px 0 4px;padding:10px 12px;background:var(--teal-soft);border:1px solid var(--teal);border-radius:12px}
+.topicbox label{display:block;font-weight:700;color:var(--teal);font-size:14px;margin-bottom:6px}
+.topicbox select{width:100%;font-size:15px;font-weight:600;padding:9px 10px;border-color:var(--teal)}
+.topicbox .hint{margin-top:6px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--muted);padding:7px 12px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--teal);color:var(--surface)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin:12px 0;box-shadow:var(--shadow)}
+.card.yes{border-left:4px solid var(--ok)}
+.card.no{border-left:4px solid var(--red)}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.num{font-weight:700;color:var(--navy);font-size:13px}
+.badge{font-size:11.5px;padding:2px 9px;border-radius:99px;background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.q{font-size:16px;margin:2px 0 10px;white-space:pre-line}
+.ans{background:var(--teal-soft);border-left:4px solid var(--teal);border-radius:0 10px 10px 0;
+  padding:10px 12px;margin:10px 0 4px;font-size:15px;white-space:pre-line}
+.ans b{color:var(--teal)}
+.ans.bad{background:var(--red-soft);border-left-color:var(--red)}
+.ans.bad b{color:var(--red)}
+.rx{background:var(--amber);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:10px 0 4px;
+  font-family:"Courier New",ui-monospace,monospace;font-size:14px;white-space:pre-wrap;line-height:1.7}
+textarea{width:100%;min-height:96px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+  font-family:"Courier New",ui-monospace,monospace;font-size:16px;background:var(--surface-2);color:var(--ink);resize:vertical}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button.act{border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;
+  padding:8px 14px;font-size:14px;cursor:pointer;font-weight:600;font-family:inherit}
+button.act:hover{border-color:var(--teal)}
+button.primary{background:var(--navy);border-color:var(--navy);color:var(--surface)}
+button.act.yes.on{background:var(--ok);border-color:var(--ok);color:#fff}
+button.act.no.on{background:var(--red);border-color:var(--red);color:#fff}
+.hidden{display:none !important}
+.hint{color:var(--muted);font-size:13.5px;margin:6px 0 0}
+.intro{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--navy);
+  border-radius:0 var(--radius) var(--radius) 0;padding:12px 16px;margin:14px 0;box-shadow:var(--shadow)}
+.intro h2{margin:0 0 6px;font-size:16px;color:var(--navy)}
+.intro p{margin:4px 0;font-size:14.5px;color:var(--muted)}
+h2.sec{font-size:18px;color:var(--navy);margin:18px 0 2px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:10px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px;text-align:center}
+.stat b{display:block;font-size:22px;color:var(--teal);font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--navy);color:var(--surface);font-weight:600;font-size:13px}
+td.c{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.opts{display:grid;gap:8px;margin:10px 0}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:15px;cursor:pointer;font-family:inherit;line-height:1.45}
+.opt b{color:var(--navy);min-width:1.4em}
+.opt.sel{border-color:var(--navy);background:var(--surface);box-shadow:inset 0 0 0 1px var(--navy)}
+.opt.ok{background:var(--teal-soft);border-color:var(--ok)}
+.opt.bad{background:var(--red-soft);border-color:var(--red)}
+.opt.miss{border-style:dashed;border-color:var(--ok)}
+.opt[disabled]{cursor:default;color:var(--ink);opacity:1}
+.mrow{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.mrow:first-child{border-top:0}
+.mrow .t{flex:1}
+.mrow select{flex:0 0 auto;min-width:70px}
+.mrow.ok .t{color:var(--ok)} .mrow.bad .t{color:var(--red)}
+.chars{display:grid;gap:6px;margin:8px 0 4px;padding:10px 12px;background:var(--surface-2);border-radius:10px;font-size:14.5px}
+.more{display:block;margin:16px auto;padding:10px 18px}
+.examhead{position:sticky;top:var(--hh,96px);z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+.examhead b{color:var(--navy)}
+footer{color:var(--muted);font-size:12.5px;text-align:center;padding:24px 8px 8px}
+@media (max-width:520px){ .q{font-size:15.5px} .card{padding:12px 13px} .brand{flex-basis:100%} }
+</style>
+</head>
+<body>
+<div class="nojs" id="nojs">
+  <h2>Тренажер не запустився</h2>
+  <p>Ви бачите лише попередній перегляд файлу. Так буває на <b>iPhone/iPad</b>, коли файл відкрито з Telegram, Viber, пошти, Google Диску чи застосунку «Файли»: у такому перегляді завдання не відображаються.</p>
+  <ol>
+    <li>Відкрийте тренажер <b>за посиланням або QR-кодом</b> від викладача — у браузері Safari чи Chrome. </li>
+    <li>Або відкрийте файл на комп’ютері чи Android-смартфоні (Chrome).</li>
+  </ol>
+</div>
+<div id="app" class="hidden">
+<header class="top" id="hdr">
+  <div class="top-inner">
+    <div class="brand"><span id="brandTitle"></span><small id="brandSmall"></small></div>
+    <div class="score" id="score">0 / 0</div>
+    <a class="iconbtn hidden" id="bookBtn" href="#" target="_blank" rel="noopener">📖 Підручник</a>
+    <a class="iconbtn hidden" id="testBtn" href="#" target="_blank" rel="noopener">📝 Контрольний тест</a>
+    <button class="iconbtn" id="themeBtn" title="Тема оформлення">🌓</button>
+    <button class="iconbtn" id="resetBtn" title="Скинути результати">Скинути</button>
+    <div class="bar"><i id="bar"></i></div>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="tabs" id="tabs"></nav>
+  <div class="topicbox hidden" id="topicbox"></div>
+  <div class="tools" id="tools"></div>
+  <div id="panel"></div>
+</div>
+<footer id="foot">Навчальний матеріал. Дози та лікарські форми звіряйте з чинною інструкцією для медичного застосування та Державним формуляром лікарських засобів.</footer>
+</div>
+<script>
+var D = {"topics": [["R1", "Загальна рецептура. Лікарські форми"]], "qa": [{"topic": "R1", "q": "Дайте визначення поняттям: «лікарська речовина», «лікарська форма», «лікарський препарат» та «лікарський засіб».", "a": "Лікарська речовина — це індивідуальна хімічна сполука або біологічно активна речовина, що застосовується для лікування, профілактики чи діагностики. Лікарська форма — це зручний для застосування вигляд, якого надають лікарській речовині (таблетка, розчин, мазь). Лікарський препарат — це готовий до застосування лікарський засіб у конкретній лікарській формі із зазначеним дозуванням (наприклад, конкретна упаковка). Лікарський засіб — узагальнене поняття, що охоплює будь-яку речовину чи їх комбінацію, призначену для лікування або профілактики захворювань.", "kind": "Питання"}, {"topic": "R1", "q": "За якими ознаками класифікують лікарські форми (наведіть приклади твердих, рідких та м'яких ЛФ)?", "a": "Лікарські форми класифікують за агрегатним станом: тверді (таблетки, порошки, драже, капсули), рідкі (розчини, настої, відвари, мікстури), м'які (мазі, пасти, супозиторії, лініменти) та для ін'єкцій (розчини і суспензії в ампулах чи флаконах для парентерального введення). Додатково класифікують за шляхом введення, дисперсологічною системою та способом виготовлення (заводські офіцинальні чи екстемпоральні магістральні).", "kind": "Питання"}, {"topic": "R1", "q": "Що таке рецепт як документ і які функції він виконує (медична, юридична, фінансова)?", "a": "Рецепт — це письмове звернення лікаря до фармацевта про виготовлення та відпуск ліків пацієнту із зазначенням способу застосування. Він виконує три функції: медичну (визначає лікування), юридичну (лікар несе відповідальність за призначення, документ має встановлену форму) та фінансову (є підставою для обліку, пільгового чи безоплатного відпуску ліків).", "kind": "Питання"}, {"topic": "R1", "q": "Назвіть 5 основних частин класичного рецепта латинською та українською мовами.", "a": "Класичний рецепт складається з п'яти частин: 1) Inscriptio (Напис) — паспортні дані закладу, лікаря і пацієнта; 2) Invocatio (Звернення) — слово «Recipe» (Rp.:); 3) Praescriptio (Пропис) — перелік лікарських речовин латинською мовою; 4) Subscriptio (Підпис/Припис) — вказівка фармацевту про лікарську форму й кількість доз; 5) Signatura (Позначення) — інструкція для пацієнта.", "kind": "Питання"}, {"topic": "R1", "q": "Яку інформацію містить частина рецепта Inscriptio (Напис) і якою мовою вона заповнюється?", "a": "Inscriptio містить дату виписування, штамп лікувального закладу, прізвище, ім'я та вік пацієнта, прізвище лікаря. Ця частина заповнюється державною (українською) мовою.", "kind": "Питання"}, {"topic": "R1", "q": "З якого слова починається звернення лікаря до фармацевта (Invocatio)?", "a": "Invocatio починається зі слова «Recipe», що скорочено записується як «Rp.:» і перекладається як «Візьми».", "kind": "Питання"}, {"topic": "R1", "q": "У якому відмінку записуються назви лікарських речовин у частині Praescriptio?", "a": "У частині Praescriptio назви лікарських речовин записуються в родовому відмінку (Genetivus), оскільки граматично вони підпорядковані дієслову «Recipe» («візьми чого?»).", "kind": "Питання"}, {"topic": "R1", "q": "Який порядок перерахування інгредієнтів у складному магістральному рецепті (Basis, Adjuvans, Corrigens, Constituens)?", "a": "У складному магістральному рецепті інгредієнти перераховують у порядку: Basis (основна діюча речовина) → Adjuvans (допоміжна речовина, що підсилює чи коригує дію основної) → Corrigens (виправляє смак, запах чи колір) → Constituens (формоутворювальна речовина, основа).", "kind": "Питання"}, {"topic": "R1", "q": "Якою мовою заповнюється Signatura (Сигнатура) та яку інформацію вона повинна містити для пацієнта?", "a": "Signatura заповнюється державною (українською) мовою і повинна містити чіткий спосіб застосування: дозу, кратність і час прийому, шлях введення. Забороняється обмежуватися загальними фразами на кшталт «Внутрішнє» чи «Відомо».", "kind": "Питання"}, {"topic": "R1", "q": "Поясніть принципову різницю між магістральними та офіцинальними рецептурними прописами.", "a": "Магістральний рецепт — це індивідуальний пропис, який лікар складає сам, перераховуючи кожен інгредієнт і його кількість, а фармацевт виготовляє ліки в аптеці ex tempore. Офіцинальний рецепт — це призначення готового лікарського засобу заводського виробництва (або стандартної прописи з Фармакопеї) під його власною назвою, без переліку окремих компонентів.", "kind": "Питання"}, {"topic": "R1", "q": "Які бланки паперових рецептів існують в Україні (ф-1 та ф-3) і для яких груп препаратів вони використовуються?", "a": "В Україні застосовують бланк форми № 1 (ф-1) — для звичайних лікарських засобів, у тому числі сильнодіючих і отруйних у складі магістральних прописів, та бланк форми № 3 (ф-3), що друкується на рожевому папері, — виключно для наркотичних і психотропних лікарських засобів, які підлягають суворому предметно-кількісному обліку.", "kind": "Питання"}, {"topic": "R1", "q": "Що таке електронний рецепт (е-рецепт) і для яких категорій ЛЗ він є обов'язковим згідно з Наказом № 360?", "a": "Електронний рецепт (е-рецепт) — це рецепт, оформлений і переданий в електронному вигляді через єдину інформаційну систему охорони здоров'я. Він є обов'язковим для лікарських засобів, що відпускаються за урядовими програмами реімбурсації (наприклад, «Доступні ліки»), а поступово впроваджується і для інших категорій рецептурних препаратів.", "kind": "Питання"}, {"topic": "R1", "q": "Як у рецепті позначаються дози твердих речовин, а як — рідких (краплі, мілілітри)?", "a": "Дози твердих (і сипучих) речовин записують у грамах десятковим дробом (наприклад, 0,5), а дози рідких речовин — у мілілітрах (ml) або краплях (guttae), залежно від лікарської форми та способу застосування.", "kind": "Питання"}, {"topic": "R1", "q": "Назвіть правила виписування наркотичних, отруйних засобів та порядок їх предметно-кількісного обліку.", "a": "Наркотичні та отруйні засоби виписують на спеціальному рецептурному бланку форми № 3, назву речовини вказують на початку переліку інгредієнтів; такі препарати підлягають предметно-кількісному обліку — облік їх руху (надходження, відпуск, залишки) ведеться окремим журналом в аптеці та лікувальному закладі з посиленим контролем.", "kind": "Питання"}, {"topic": "R1", "q": "Які загальноприйняті латинські скорочення дозволено використовувати в рецептах (M.f., D.t.d., aa, q.s.)?", "a": "Загальноприйняті рецептурні скорочення: M.f. (Misce, fiat — змішай, щоб утворилося), D.t.d. N. (Da tales doses numero — видай такі дози числом), aa (ana — порівну), q.s. (quantum satis — скільки потрібно), D.S. (Da, Signa — видай, познач), ad (до певного об'єму/маси). Дозволено використовувати лише офіційно затверджений перелік латинських скорочень.", "kind": "Питання"}], "cases": [{"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Лікар виписав пацієнту з онкологічним захворюванням наркотичний анальгетик морфін на стандартному рецептурному бланку форми № 1 (ф-1).", "a": "Грубе порушення Наказу № 360. Наркотичні та психотропні лікарські засоби дозволено виписувати виключно на спеціальних рецептурних бланках форми № 3 (ф-3), які друкуються на папері рожевого кольору і підлягають суворому предметно-кількісному обліку."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Пацієнт звернувся до аптеки з рецептом на антибіотик (бланк ф-1), який був виписаний 120 днів тому. Лікар запевнив пацієнта, що рецепт дійсний протягом року.", "a": "Рецепт недійсний. Згідно з чинними правилами, стандартний рецепт на лікарські засоби (ф-1), повну вартість яких оплачує пацієнт, дійсний лише протягом 90 календарних днів з моменту виписування."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Лікар виписав антибіотик пеніцилінового ряду у флаконах і в рецепті зазначив: D.t.d. N. 10 in flaconis.", "a": "Фармацевтична та граматична помилка. Згідно з правилами латинської медичної рецептури, слово «флакон» (in flaconis) у рецепті категорично не пишеться. Правильний запис має бути просто D.t.d. N. 10."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "У частині Signatura (Сигнатура) рецепта на знеболювальні таблетки лікар написав: S. Відомо. Приймати при болях.", "a": "Порушення вимог до Сигнатури. Наказ № 360 категорично забороняє використовувати загальні фрази, такі як «Зовнішнє» чи «Відомо». Сигнатура має містити точні вказівки державною мовою: дозу, частоту, час прийому та спосіб введення."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "На одному паперовому бланку форми № 1 (ф-1) лікар виписав пацієнту п'ять різних ненаркотичних препаратів.", "a": "Порушення ліміту призначень. На одному бланку форми ф-1 дозволяється виписувати не більше трьох найменувань лікарських засобів."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Пацієнту призначено препарат за урядовою програмою реімбурсації «Доступні ліки». Лікар виписав цей препарат на паперовому бланку і вказав два найменування.", "a": "Подвійна помилка. По-перше, ліки, що підлягають реімбурсації, виписуються переважно через електронний рецепт (е-рецепт). По-друге, якщо використовується паперовий бланк для пільгових ліків, на ньому дозволяється виписувати лише одне найменування."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Лікар виписав готові заводські таблетки парацетамолу розгорнутим способом, додавши вказівку M. f. tab.", "a": "Таблетки є готовою офіцинальною формою фабричного виробництва. Їх виписують виключно скороченим способом. Вказівка Misce, fiat (Змішай, щоб утворилося) застосовується лише для магістральних ліків, які фармацевт готує в аптеці екстемпорально."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Лікар виписав розчин для внутрішньовенного введення індивідуального виготовлення (магістральний), але забув додати вказівку Sterilisetur! (Простерилізуй!).", "a": "Небезпечна для життя помилка. Усі розчини для ін'єкцій повинні бути абсолютно стерильними. Якщо препарат готується в аптеці, вказівка фармацевту про стерилізацію є обов'язковою."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Лікар виписав таблетки, що вкриті кишковорозчинною оболонкою, просто як Tabulettae, не вказавши особливість форми.", "a": "Необхідно вказувати Tabulettae obductae (таблетки, вкриті оболонкою). Це критично важливо, оскільки така оболонка захищає діючу речовину від руйнування соляною кислотою шлунка або захищає сам шлунок від подразнення."}, {"topic": "R1", "kind": "Клінічне завдання (пошук помилки)", "q": "Лікар виписав рецепт на наркотичний засіб (ф-3) 1 числа місяця. Пацієнт прийшов до аптеки 15 числа того ж місяця.", "a": "Фармацевт відмовить у відпуску препарату. Рецепти на наркотичні та психотропні речовини (як паперові ф-3, так і електронні) дійсні лише протягом 10 календарних днів з моменту виписування."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Медична сестра готується ввести пацієнту лікарський препарат у формі суспензії.", "a": "Перед тим як набрати суспензію у шприц або налити у ложку (якщо це внутрішнє), медсестра повинна інтенсивно збовтати флакон. Діюча речовина в суспензіях не розчинена і випадає в осад, тому без збовтування пацієнт отримає або лише розчинник, або токсичну дозу осаду. Вводити суспензії внутрішньовенно категорично заборонено."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Пацієнту призначено внутрішньовенну ін'єкцію препарату, який випущений у формі олійного розчину (Solutionis oleosae).", "a": "Медсестра має негайно зупинити виконання призначення і звернутися до лікаря. Внутрішньовенно дозволено вводити виключно істинні водні розчини. Введення олійного розчину у вену неминуче призведе до жирової емболії судин легень або мозку та смерті пацієнта."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Пацієнт отримує таблетки з пролонгованою дією (Tabulettae-retard). Він скаржиться, що таблетка завелика, і запитує медсестру, чи можна її розламати або розжувати.", "a": "Медсестра повинна категорично заборонити розламувати, жувати або подрібнювати такі таблетки. Їхня структура створена для поступового вивільнення ліків (часто вони багатошарові). Руйнування структури призведе до миттєвого всмоктування всієї добової дози та гострого токсичного передозування."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Фармацевт відпускає пацієнту екстракт (Extractum).", "a": "Фармацевт повинен пояснити пацієнту, що це висококонцентрована витяжка. На відміну від настоїв, які п'ють ложками, екстракти дозуються виключно краплями. Також слід уточнити консистенцію екстракту (рідкий, густий чи сухий), оскільки це впливає на правила його прийому та зберігання."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Пацієнту для купірування нападу стенокардії призначено сублінгвальні таблетки нітрогліцерину.", "a": "Медсестра має навчити пацієнта правильному прийому. Таблетку необхідно покласти під язик і не ковтати до повного розчинення. Сублінгвальний шлях дозволяє лікам швидко всмоктатися у верхню порожнисту вену, оминаючи руйнування в печінці (ефект першого проходження). Якщо таблетку проковтнути, вона не подіє."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Пацієнту призначено ректальні супозиторії (Suppositoria rectalia).", "a": "Пацієнту слід пояснити, що свічку необхідно вводити у пряму кишку лише після природного випорожнення або очисної клізми, щоб забезпечити контакт ліків зі слизовою оболонкою. Зберігати супозиторії потрібно в холодильнику, оскільки їхня основа (олія какао) плавиться при кімнатній температурі."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Хворому на астму вперше призначено препарат у формі дозованого аерозолю (Aerosolum).", "a": "Медсестра проводить інструктаж. Пацієнт повинен зробити глибокий видих, обхопити мундштук губами, зробити глибокий вдих і одночасно натиснути на клапан балончика. Найважливіше — затримати дихання на кілька секунд після вдиху, щоб частинки аерозолю осіли на бронхах."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Лікар призначив пацієнту гарячий настій трави термопсису.", "a": "Фармацевт готує настій (Infusum) ex tempore. Пацієнта необхідно попередити, що настої та відвари є водними витяжками, які дуже швидко псуються. Їх потрібно зберігати виключно в холодильнику і використати протягом 3–4 днів."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Пацієнту виписано трансдермальну терапевтичну систему (ТТС) — дозований пластир (Emplastrum).", "a": "Медсестра пояснює, що пластир треба наклеювати на суху, чисту ділянку шкіри без густого волосяного покриву. Для уникнення подразнень та алергічних реакцій місце наклеювання пластиру потрібно постійно змінювати."}, {"topic": "R1", "kind": "Медсестринський/фармацевтичний процес", "q": "Медсестрі потрібно ввести два різних антибіотики внутрішньовенно. Вона вирішила набрати їх в один шприц, щоб не робити два проколи.", "a": "Це грубе порушення. Змішування різних лікарських засобів в одному шприці або крапельниці без узгодження категорично заборонено через ризик фармацевтичної несумісності (випадання осаду, помутніння, зміна кольору, інактивація речовин). Кожен препарат вводиться окремо."}], "rx": [{"topic": "R1", "q": "(Проста таблетка) — Таблетки (Tabulettae) Виписати 10 таблеток парацетамолу (Paracetamolum) у дозі 0,5 г. Приймати по 1 таблетці 3 рази на день після їди.", "a": "Rp.: Tab. Paracetamoli 0,5 N. 10\nD.S. Усередину по 1 таблетці 3 рази на день після їди."}, {"topic": "R1", "q": "(Проста капсула) — Капсули (Capsulae) Виписати 20 капсул доксицикліну гідрохлориду (Doxycyclini hydrochloridum) по 0,1 г. Приймати по 1 капсулі 1 раз на день.", "a": "Rp.: Doxycyclini hydrochloridi 0,1\nD.t.d. N. 20 in caps.\nS. Усередину по 1 капсулі 1 раз на день."}, {"topic": "R1", "q": "(Складний дозований з додаванням цукру) — Порошки розгорнутим способом (Pulveres) Виписати 10 порошків, що містять дибазол (Dibazolum) по 0,02 г та цукор (Saccharum) по 0,3 г. Приймати по 1 порошку 3 рази на день.", "a": "Rp.: Dibazoli 0,02 Sacchari 0,3 M. f. pulvis\nD.t.d. N. 10\nS. Усередину по 1 порошку 3 рази на день."}, {"topic": "R1", "q": "(Простий недозований порошок) — Порошки скороченим способом (Pulveres) Виписати 50,0 г етазолу (Aethazolum) найдрібнішого (subtilissimus). Присипати ранову поверхню.", "a": "Rp.: Aethazoli subtilissimi 50,0\nD. S. Присипати ранову поверхню."}, {"topic": "R1", "q": "(Ректальні магістральні) — Свічки розгорнутим способом (Suppositoria) Виписати 10 ректальних супозиторіїв, що містять парацетамол (Paracetamolum) по 0,15 г та олію какао (Oleum Cacao) по 3,0 г. Призначити по 1 свічці у пряму кишку.", "a": "Rp.: Paracetamoli 0,15 Olei Cacao 3,0 M. f. supp. rect.\nD.t.d. N. 10\nS. По 1 свічці у пряму кишку."}, {"topic": "R1", "q": "(Офіцинальні прості) — Свічки скороченим способом (Suppositoria) Виписати 10 ректальних супозиторіїв з диклофенаком (Diclofenacum) по 0,1 г. Призначити по 1 супозиторію 1 раз на день.", "a": "Rp.: Supp. rectalia cum Diclofenaco 0,1\nD.t.d. N. 10\nS. По 1 свічці в пряму кишку 1 раз на день."}, {"topic": "R1", "q": "(Мазь на нестандартній основі) — Мазі розгорнутим способом (Unguenta) Виписати 50,0 г мазі, що містить 0,5 г неоміцину сульфату (Neomycini sulfas) на основі ланоліну (Lanolinum). Призначити для змащування уражених ділянок шкіри.", "a": "Rp.: Neomycini sulfatis 0,5 Lanolini ad 50,0 M. f. unguentum\nD.S. Змащувати уражені ділянки шкіри."}, {"topic": "R1", "q": "(Проста офіцинальна мазь) — Мазі скороченим способом (Unguenta) Виписати 20,0 г 0,5% мазі преднізолону (Prednisolonum). Змащувати уражені ділянки шкіри.", "a": "Rp.: Ung. Prednisoloni 0,5% — 20,0\nD.S. Змащувати уражені ділянки шкіри."}, {"topic": "R1", "q": "(Офіцинальна складна паста) — Пасти скороченим способом (Pastae) Виписати 25,0 г офіцинальної цинко-саліцилової пасти (Pasta Zinci-salicylata). Призначити для нанесення на шкіру.", "a": "Rp.: Pastae Zinci-salicylatae 25,0\nD.S. Наносити на уражені ділянки шкіри."}, {"topic": "R1", "q": "(Офіцинальний скорочений пропис) — Лініменти (Linimenta) Виписати 20,0 г 5% лініменту синтоміцину (Synthomycinum). Для нанесення на уражені ділянки шкіри.", "a": "Rp.: Linimenti Synthomycini 5% — 20,0\nD.S. Для нанесення на уражені ділянки шкіри."}, {"topic": "R1", "q": "(Недозований масою) — Пластирі (Emplastra) Виписати 50,0 г простого свинцевого пластиру (Emplastrum Plumbi simplex). Підігріти, нанести на тканину і прикласти до ураженої ділянки.", "a": "Rp.: Emplastri Plumbi simplicis 50,0\nD.S. Підігріти, нанести на тканину і прикласти до ураженої ділянки."}, {"topic": "R1", "q": "(Водний розчин для зовнішнього застосування, скорочено) — Розчини (Solutiones) – 5 прописів Виписати 500 мл 0,02% розчину фурациліну (Furacilinum). Для промивання ран.", "a": "Rp.: Sol. Furacilini 0,02% – 500 ml\nD. S. Для промивання ран."}, {"topic": "R1", "q": "(Водна суспензія, скорочено) — Суспензії (Suspensiones) – 5 прописів Виписати 10 мл 0,5% суспензії гідрокортизону ацетату (Hydrocortisoni acetas). По 2 краплі в око 4 рази на день.", "a": "Rp.: Susp. Hydrocortisoni acetatis 0,5% – 10 ml\nD. S. По 2 краплі в око 4 рази на день. Перед вживанням збовтувати."}, {"topic": "R1", "q": "(Зі вказанням кількості олії, скорочено) — Емульсії (Emulsa) – 5 прописів Виписати 100 мл емульсії з 10 мл лляної олії (Oleum Lini). Приймати по 1 столовій ложці 3 рази на день.", "a": "Rp.: Emulsi olei Lini ex 10 ml – 100 ml\nD. S. По 1 столовій ложці 3 рази на день."}, {"topic": "R1", "q": "(Відвар кори дуба) — Відвари (Decocta) розгорнутим способом – 5 прописів Виписати 200 мл відвару з 20,0 г кори дуба (cortex Quercus) розгорнутим способом. Для полоскання порожнини рота.", "a": "Rp.: Corticis Quercus 20,0 Aquae purificatae ad 200 ml M. f. decoctum\nD. S. Для полоскання порожнини рота."}, {"topic": "R1", "q": "(Настій трави горицвіту весняного, скорочено) — Настої (Infusa) розгорнутим і скороченим способами – 5 прописів Виписати 180 мл настою трави горицвіту весняного (herba Adonidis vernalis) у співвідношенні 1:30. Приймати по 1 столовій ложці 3 рази на день.", "a": "Rp.: Inf. herbae Adonidis vernalis 6,0 – 180 ml\nD. S. По 1 столовій ложці 3 рази на день."}, {"topic": "R1", "q": "(Проста настоянка) — Настоянки (Tincturae) – 5 прописів Виписати 25 мл настоянки валеріани (Tinctura Valerianae). По 25 крапель 3 рази на день.", "a": "Rp.: Tinct. Valerianae 25 ml\nD. S. По 25 крапель 3 рази на день."}, {"topic": "R1", "q": "(Суха речовина в ампулі) — Ампули (in ampullis) – 10 прописів Виписати 6 ампул вінкристину (Vincristinum) по 0,001 г. Вміст ампули розчинити в 5 мл води для ін'єкцій, вводити в/в 1 раз на тиждень.", "a": "Rp.: Vincristini 0,001\nD. t. d. N. 6 in ampullis\nS. Вміст ампули розчинити в 5 мл води для ін'єкцій. Вводити внутрішньовенно 1 раз на тиждень."}, {"topic": "R1", "q": "(Ізотонічний розчин) — Інфузійні розчини (Флакони для в/в краплинного введення) – 5 прописів Виписати 400 мл 0,9% розчину натрію хлориду (Natrii chloridum). Для внутрішньовенного краплинного введення.", "a": "Rp.: Sol. Natrii chloridi 0,9% – 400 ml\nD. S. Внутрішньовенно краплинно."}, {"topic": "R1", "q": "(Аерозоль з комерційною назвою) — АЕРОЗОЛІ (Aerosola) – 5 прописів Виписати 30,0 г аерозолю «Інгаліпт» («Ingaliptum»). По одній інгаляції 3 рази на день.", "a": "Rp.: Aerosoli «Ingaliptum» 30,0\nD. S. По одній інгаляції в ротову порожнину 3 рази на день."}], "tests": [], "multi": [], "match": [], "meta": {"title": "Медична рецептура", "subtitle": "Фармакологія 2027", "key": "rx-trainer-v3", "book": "https://andrian13131313-wq.github.io/krok-antimicrobials/Підручник_Загальна_фармакологія_2027.html", "test": "https://andrian13131313-wq.github.io/krok-antimicrobials/zag.html"}};
+(function () {
+'use strict';
+var M = D.meta, KEY = M.key, PAGE = 30;
+var S = {};
+try { var raw = localStorage.getItem(KEY); if (raw) S = JSON.parse(raw) || {}; } catch (e) { S = {}; }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+var L = 'ABCDEFGHIJ';
+function $(id) { return document.getElementById(id); }
+
+var TOP = {}, TOPS = D.topics || [];
+TOPS.forEach(function (t) { TOP[t[0]] = t[1]; });
+var K = { qa: [], cases: [], rx: [], tests: [], multi: [], match: [] };
+Object.keys(K).forEach(function (k) {
+  (D[k] || []).forEach(function (x, i) { x.id = k.charAt(0) + k.charAt(1) + i; x.k = k; K[k].push(x); });
+});
+var TABS = [['qa', 'Самопідготовка'], ['cases', 'Ситуаційні задачі'], ['rx', 'Рецепти'], ['tests', 'Тести «Крок»'], ['multi', 'Множинний вибір'], ['match', 'Відповідність']]
+  .filter(function (t) { return K[t[0]].length; });
+TABS.push(['res', 'Результат']);
+var INTRO = {
+  qa: ['Питання для самопідготовки', 'Сформулюйте відповідь уголос або письмово, потім відкрийте еталон і чесно позначте: «Знаю» або «Треба повторити».'],
+  cases: ['Ситуаційні задачі', 'Визначте ключову ознаку ситуації, оберіть препарат або тактику й обґрунтуйте вибір. Потім звірте з еталоном.'],
+  rx: ['Виписування рецептів', 'Спочатку напишіть пропис у полі самостійно, потім звірте з еталоном: назва в Genetivus, доза чи концентрація, кількість, лікарська форма, сигнатура.'],
+  tests: ['Тести формату «Крок»', 'Режим «Навчання» — відповідь і пояснення одразу. Режим «Іспит» — випадкова вибірка, перемішані варіанти, результат наприкінці.'],
+  multi: ['Множинний вибір', 'Позначте всі правильні твердження й натисніть «Перевірити». Завдання зараховується лише за повністю правильної відповіді.'],
+  match: ['Встановлення відповідності', 'Для кожного пункту оберіть літеру відповідної характеристики й натисніть «Перевірити».']
+};
+var tab = S._tab && (TABS.some(function (t) { return t[0] === S._tab; })) ? S._tab : TABS[0][0];
+var topic = (S._topic && TOPS.some(function (t) { return t[0] === S._topic; })) ? S._topic : 'all', filt = 'all', shown = PAGE, order = {}, mode = 'learn', exam = null;
+
+// ---------- оцінювання елемента: 1 / 0 / undefined
+function val(it) {
+  var k = it.k;
+  if (k === 'qa' || k === 'cases' || k === 'rx') return S['m' + it.id];
+  if (k === 'tests') { var a = S['t' + it.id]; return a === undefined ? undefined : (a === it.correct ? 1 : 0); }
+  if (k === 'multi' || k === 'match') { var r = S['r' + it.id]; return r === undefined ? undefined : r; }
+}
+function all() { var a = []; TABS.forEach(function (t) { if (K[t[0]]) a = a.concat(K[t[0]]); }); return a; }
+var ALL = all();
+function inTopic(it) { return topic === 'all' || it.topic === topic; }
+function topicsOf(k) { var seen = {}; K[k].forEach(function (x) { seen[x.topic] = 1; }); return TOPS.filter(function (t) { return seen[t[0]]; }); }
+
+function head(it, n, extra) {
+  return '<div class="meta"><span class="num">№ ' + n + '</span>' + (TOPS.length > 1 && TOP[it.topic] ? '<span class="badge">' + esc(TOP[it.topic]) + '</span>' : '') +
+    (it.kind ? '<span class="badge">' + esc(it.kind) + '</span>' : '') + (extra || '') + '</div>';
+}
+function cls(v) { return v === 1 ? ' yes' : v === 0 ? ' no' : ''; }
+function marks(it, yesLabel) {
+  var v = S['m' + it.id];
+  return '<button class="act yes' + (v === 1 ? ' on' : '') + '" data-a="mark" data-id="' + it.id + '" data-v="1">' + yesLabel + '</button>' +
+    '<button class="act no' + (v === 0 ? ' on' : '') + '" data-a="mark" data-id="' + it.id + '" data-v="0">Треба повторити</button>';
+}
+
+// ---------- картки
+function qaHTML(it, n) {
+  var open = S['o' + it.id];
+  return '<div class="card' + cls(val(it)) + '" id="c-' + it.id + '">' + head(it, n) +
+    (it.title ? '<div class="q"><b>' + esc(it.title) + '</b></div>' : '') +
+    '<div class="q">' + esc(it.q) + '</div>' +
+    '<div class="ans' + (open ? '' : ' hidden') + '" id="a-' + it.id + '"><b>Еталон відповіді.</b> ' + esc(it.a) + '</div>' +
+    '<div class="actions"><button class="act primary" data-a="show" data-id="' + it.id + '">' + (open ? 'Сховати еталон' : 'Показати еталон') + '</button>' + marks(it, 'Знаю') + '</div></div>';
+}
+function rxHTML(it, n) {
+  var open = S['o' + it.id];
+  return '<div class="card' + cls(val(it)) + '" id="c-' + it.id + '">' + head(it, n) +
+    '<div class="q">' + esc(it.q) + '</div>' +
+    '<textarea data-id="' + it.id + '" placeholder="Rp.: ..." spellcheck="false" autocapitalize="off" autocorrect="off">' + esc(S['x' + it.id] || '') + '</textarea>' +
+    '<div class="rx' + (open ? '' : ' hidden') + '" id="a-' + it.id + '">' + esc(it.a) + '</div>' +
+    '<div class="actions"><button class="act primary" data-a="show" data-id="' + it.id + '">' + (open ? 'Сховати еталон' : 'Показати еталон') + '</button>' + marks(it, 'Виписав правильно') + '</div></div>';
+}
+function testHTML(it, n) {
+  var ch = S['t' + it.id], done = ch !== undefined;
+  var o = it.opts.map(function (t, i) {
+    var c = 'opt'; if (done) { if (i === it.correct) c += ' ok'; else if (i === ch) c += ' bad'; }
+    return '<button class="' + c + '" data-a="pick" data-id="' + it.id + '" data-i="' + i + '"' + (done ? ' disabled' : '') + '><b>' + L[i] + '</b><span>' + esc(t) + '</span></button>';
+  }).join('');
+  var fb = done ? '<div class="ans' + (ch === it.correct ? '' : ' bad') + '"><b>' + (ch === it.correct ? 'Правильно.' : 'Неправильно.') + '</b> Правильна відповідь: <b>' + L[it.correct] + '. ' + esc(it.opts[it.correct]) + '</b>' + (it.why ? '\n' + esc(it.why) : '') + '</div>' +
+    '<div class="actions"><button class="act" data-a="retry" data-id="' + it.id + '">Спробувати знову</button></div>' : '';
+  return '<div class="card' + cls(val(it)) + '" id="c-' + it.id + '">' + head(it, n) + '<div class="q">' + esc(it.q) + '</div><div class="opts">' + o + '</div>' + fb + '</div>';
+}
+function multiHTML(it, n) {
+  var sel = S['s' + it.id] || [], done = S['r' + it.id] !== undefined;
+  var o = it.opts.map(function (t, i) {
+    var on = sel.indexOf(i) >= 0, ok = it.correct.indexOf(i) >= 0, c = 'opt';
+    if (done) { if (on && ok) c += ' ok'; else if (on && !ok) c += ' bad'; else if (!on && ok) c += ' miss'; }
+    else if (on) c += ' sel';
+    return '<button class="' + c + '" data-a="tog" data-id="' + it.id + '" data-i="' + i + '"' + (done ? ' disabled' : '') + '><b>' + (on ? '☑' : '☐') + '</b><span>' + esc(t) + '</span></button>';
+  }).join('');
+  var fb = done ? '<div class="ans' + (S['r' + it.id] ? '' : ' bad') + '"><b>' + (S['r' + it.id] ? 'Правильно.' : 'Неправильно.') + '</b> Правильні твердження: ' + it.correct.map(function (i) { return L[i]; }).join(', ') + '. Пунктиром позначено пропущені правильні.' + (it.why ? '\n' + esc(it.why) : '') + '</div>' : '';
+  var act = done ? '<button class="act" data-a="mreset" data-id="' + it.id + '">Спробувати знову</button>' : '<button class="act primary" data-a="mcheck" data-id="' + it.id + '">Перевірити</button>';
+  return '<div class="card' + cls(val(it)) + '" id="c-' + it.id + '">' + head(it, n) + '<div class="q">' + esc(it.q) + '</div><div class="opts">' + o + '</div>' + fb + '<div class="actions">' + act + '</div></div>';
+}
+function matchHTML(it, n) {
+  var ans = S['s' + it.id] || {}, done = S['r' + it.id] !== undefined, nn = it.pairs.length;
+  var letters = it.order; // порядок характеристик (індекси пар) для літер A, B, C...
+  var chars = letters.map(function (pi, li) { return '<div><b>' + L[li] + '.</b> ' + esc(it.pairs[pi][1]) + '</div>'; }).join('');
+  var rows = it.pairs.map(function (p, i) {
+    var cur = ans[i], right = L[letters.indexOf(i)], c = '';
+    if (done) c = cur === right ? ' ok' : ' bad';
+    var opt = '<option value="">—</option>' + letters.map(function (x, li) { return '<option' + (cur === L[li] ? ' selected' : '') + '>' + L[li] + '</option>'; }).join('');
+    return '<div class="mrow' + c + '"><div class="t"><b>' + (i + 1) + '.</b> ' + esc(p[0]) + (done && cur !== right ? ' → правильно: <b>' + right + '</b>' : '') + '</div><select data-a="msel" data-id="' + it.id + '" data-i="' + i + '"' + (done ? ' disabled' : '') + '>' + opt + '</select></div>';
+  }).join('');
+  var act = done ? '<button class="act" data-a="xreset" data-id="' + it.id + '">Спробувати знову</button>' : '<button class="act primary" data-a="xcheck" data-id="' + it.id + '">Перевірити</button>';
+  var fb = done ? '<div class="ans' + (S['r' + it.id] ? '' : ' bad') + '"><b>' + (S['r' + it.id] ? 'Усі відповідності правильні.' : 'Є помилки.') + '</b></div>' : '';
+  return '<div class="card' + cls(val(it)) + '" id="c-' + it.id + '">' + head(it, n) + '<div class="q"><b>' + esc(it.title) + '</b></div><div class="chars">' + chars + '</div>' + rows + fb + '<div class="actions">' + act + '</div></div>';
+}
+var R = { qa: qaHTML, cases: qaHTML, rx: rxHTML, tests: testHTML, multi: multiHTML, match: matchHTML };
+
+// ---------- навігація та інструменти
+function updLinks() {
+  var bk = (M.books && M.books[topic]) || M.book, ts = (M.tests && M.tests[topic]) || M.test;
+  $('bookBtn').classList.toggle('hidden', !bk); if (bk) $('bookBtn').href = bk;
+  $('testBtn').classList.toggle('hidden', !ts); if (ts) $('testBtn').href = ts;
+}
+function renderTopic() {
+  updLinks();
+  var box = $('topicbox');
+  if (TOPS.length < 2 || tab === 'res') { box.className = 'topicbox hidden'; return; }
+  var n = ALL.filter(inTopic).length;
+  box.className = 'topicbox';
+  box.innerHTML = '<label for="topicSel">📚 Тема тренування</label><select id="topicSel" data-a="topic"><option value="all"' + (topic === 'all' ? ' selected' : '') + '>Усі теми — підсумкове тренування (' + ALL.length + ')</option>' +
+    TOPS.map(function (t) { var c = ALL.filter(function (x) { return x.topic === t[0]; }).length; return c ? '<option value="' + esc(t[0]) + '"' + (topic === t[0] ? ' selected' : '') + '>' + esc(t[1]) + ' (' + c + ')</option>' : ''; }).join('') +
+    '</select><p class="hint">' + (topic === 'all' ? 'Підсумкове тренування: завдання з усіх тем.' : 'Тематичне тренування: «' + esc(TOP[topic]) + '». На всіх вкладках — лише завдання цієї теми.') + ' Доступно завдань: ' + n + '.</p>';
+}
+function renderNav() {
+  renderTopic();
+  $('tabs').innerHTML = TABS.map(function (t) {
+    var c = t[0] === 'res' ? '' : ' (' + K[t[0]].filter(inTopic).length + ')';
+    return '<button class="tab' + (tab === t[0] ? ' on' : '') + '" data-tab="' + t[0] + '">' + t[1] + c + '</button>';
+  }).join('');
+}
+function renderTools() {
+  var h = '';
+  if (tab === 'res') { $('tools').innerHTML = ''; return; }
+  if (tab === 'tests') h += '<div class="seg"><button data-a="mode" data-v="learn" class="' + (mode === 'learn' ? 'on' : '') + '">Навчання</button><button data-a="mode" data-v="exam" class="' + (mode === 'exam' ? 'on' : '') + '">Іспит</button></div>';
+  if (!(tab === 'tests' && mode === 'exam')) {
+    h += '<select data-a="filt"><option value="all">Усі завдання</option><option value="new"' + (filt === 'new' ? ' selected' : '') + '>Ще не виконані</option><option value="bad"' + (filt === 'bad' ? ' selected' : '') + '>Лише помилки / «повторити»</option></select>';
+    h += '<button class="act" data-a="shuffle">🔀 Перемішати</button>';
+  }
+  $('tools').innerHTML = h;
+}
+function listFor(k) {
+  var l = K[k].filter(function (it) {
+    if (!inTopic(it)) return false;
+    var v = val(it);
+    if (filt === 'new') return v === undefined;
+    if (filt === 'bad') return v === 0;
+    return true;
+  });
+  if (order[k]) { var o = order[k]; l.sort(function (a, b) { return o[a.id] - o[b.id]; }); }
+  return l;
+}
+function render() {
+  renderTools();
+  var p = $('panel');
+  if (tab === 'res') { p.innerHTML = resultHTML(); updateScore(); return; }
+  if (tab === 'tests' && mode === 'exam') { p.innerHTML = examHTML(); updateScore(); return; }
+  var l = listFor(tab), h = '<div class="intro"><h2>' + INTRO[tab][0] + '</h2><p>' + INTRO[tab][1] + '</p></div>';
+  if (!l.length) h += '<p class="hint">' + (filt === 'all' ? 'Завдань немає.' : 'За цим фільтром завдань немає.') + '</p>';
+  h += l.slice(0, shown).map(function (it, i) { return R[tab](it, i + 1); }).join('');
+  if (l.length > shown) h += '<button class="act more" data-a="more">Показати ще (' + Math.min(PAGE, l.length - shown) + ' з ' + (l.length - shown) + ')</button>';
+  p.innerHTML = h;
+  updateScore();
+}
+function rerender() { var y = window.pageYOffset; render(); window.scrollTo(0, y); }
+function refreshCard(id) {
+  var el = $('c-' + id); if (!el) { rerender(); return; }
+  var it = byId[id], n = (el.querySelector('.num') || { textContent: '№ 1' }).textContent.replace('№ ', '');
+  var tmp = document.createElement('div'); tmp.innerHTML = R[it.k](it, n); el.parentNode.replaceChild(tmp.firstChild, el); updateScore();
+}
+var byId = {}; ALL.forEach(function (x) { byId[x.id] = x; });
+
+// ---------- іспит
+function shuffleArr(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function examHTML() {
+  var h = '<div class="intro"><h2>Режим «Іспит»</h2><p>Випадкові тести з перемішаними варіантами. Правильні відповіді з’являться після завершення. Результат іспиту не змінює ваш прогрес у режимі «Навчання».</p></div>';
+  if (!exam) {
+    var max = K.tests.filter(inTopic).length;
+    h += '<div class="card"><div class="tools" style="margin:0">' +
+      '<span class="hint" style="margin:0">' + (topic === 'all' ? 'Підсумковий іспит з усіх тем' : 'Тема: ' + esc(TOP[topic])) + ' · у банку ' + max + ' тестів</span>' +
+      '<select id="exN">' + [10, 20, 30, 50, 100].filter(function (n) { return n < max; }).map(function (n) { return '<option value="' + n + '"' + (n === 30 ? ' selected' : '') + '>' + n + ' тестів</option>'; }).join('') + '<option value="' + max + '">усі (' + max + ')</option></select>' +
+      '<button class="act primary" data-a="exstart">Почати іспит</button></div>' +
+      (S._last ? '<p class="hint">Останній іспит: ' + esc(S._last) + '</p>' : '') + '</div>';
+    return h;
+  }
+  var done = exam.fin, right = 0;
+  exam.items.forEach(function (e) { if (e.ch === e.correct) right++; });
+  var answered = exam.items.filter(function (e) { return e.ch !== undefined; }).length;
+  h += '<div class="examhead">' + (done ? '<b>Результат: ' + right + ' / ' + exam.items.length + ' (' + Math.round(right / exam.items.length * 100) + ' %) — ' + grade(right / exam.items.length) + '</b><span class="hint">' + exam.time + '</span><button class="act" data-a="exwrong">Лише помилки</button><button class="act primary" data-a="exnew">Новий іспит</button>'
+    : '<b>Відповіли: ' + answered + ' / ' + exam.items.length + '</b><button class="act primary" data-a="exfin">Завершити іспит</button><button class="act" data-a="exquit">Вийти</button>') + '</div>';
+  exam.items.forEach(function (e, n) {
+    if (exam.onlyWrong && e.ch === e.correct) return;
+    var it = byId[e.id];
+    var o = e.perm.map(function (oi, pos) {
+      var c = 'opt';
+      if (done) { if (pos === e.correct) c += ' ok'; else if (pos === e.ch) c += ' bad'; }
+      else if (pos === e.ch) c += ' sel';
+      return '<button class="' + c + '" data-a="expick" data-n="' + n + '" data-i="' + pos + '"' + (done ? ' disabled' : '') + '><b>' + L[pos] + '</b><span>' + esc(it.opts[oi]) + '</span></button>';
+    }).join('');
+    var fb = done ? '<div class="ans' + (e.ch === e.correct ? '' : ' bad') + '"><b>' + (e.ch === e.correct ? 'Правильно.' : e.ch === undefined ? 'Без відповіді.' : 'Неправильно.') + '</b> Правильна відповідь: <b>' + L[e.correct] + '. ' + esc(it.opts[it.correct]) + '</b>' + (it.why ? '\n' + esc(it.why) : '') + '</div>' : '';
+    h += '<div class="card' + (done ? (e.ch === e.correct ? ' yes' : ' no') : '') + '">' + head(it, n + 1) + '<div class="q">' + esc(it.q) + '</div><div class="opts">' + o + '</div>' + fb + '</div>';
+  });
+  if (!done) h += '<div class="actions" style="justify-content:center"><button class="act primary" data-a="exfin">Завершити іспит</button></div>';
+  return h;
+}
+function grade(r) { var p = r * 100; return p >= 90 ? '«відмінно»' : p >= 75 ? '«добре»' : p >= 60 ? '«задовільно»' : 'потрібне доопрацювання'; }
+
+// ---------- результат
+function resultHTML() {
+  var tot = ALL.length, right = 0, done = 0;
+  ALL.forEach(function (it) { var v = val(it); if (v !== undefined) done++; if (v === 1) right++; });
+  var pct = tot ? Math.round(right / tot * 100) : 0;
+  var ts = TABS.filter(function (t) { return t[0] !== 'res'; });
+  var h = '<div class="intro"><h2>Результат самоперевірки</h2><p>Бал нараховується за кожне завдання, позначене як засвоєне, і за правильно виконаний тест. Прогрес зберігається в цьому браузері на цьому пристрої.</p></div>' +
+    '<div class="grid"><div class="stat"><b>' + right + ' / ' + tot + '</b><span>засвоєно</span></div><div class="stat"><b>' + pct + ' %</b><span>виконання</span></div>' +
+    '<div class="stat"><b>' + done + '</b><span>опрацьовано</span></div><div class="stat"><b style="font-size:17px">' + (done ? grade(right / Math.max(done, 1)) : '—') + '</b><span>якість (від опрацьованих)</span></div></div>';
+  h += '<h2 class="sec">За типами завдань</h2><div class="tblw"><table><tr><th>Тип</th><th>Опрацьовано</th><th>Правильно</th><th>Усього</th></tr>' + ts.map(function (t) {
+    var l = K[t[0]], d = 0, r = 0; l.forEach(function (it) { var v = val(it); if (v !== undefined) d++; if (v === 1) r++; });
+    return '<tr><td>' + t[1] + '</td><td class="c">' + d + '</td><td class="c">' + r + '</td><td class="c">' + l.length + '</td></tr>';
+  }).join('') + '</table></div>';
+  if (TOPS.length > 1) {
+    h += '<h2 class="sec">За темами</h2><div class="tblw"><table><tr><th>Тема</th><th>Правильно / усього</th><th>%</th></tr>' + TOPS.map(function (t) {
+      var l = ALL.filter(function (it) { return it.topic === t[0]; }), r = l.filter(function (it) { return val(it) === 1; }).length;
+      if (!l.length) return '';
+      return '<tr><td>' + esc(t[1]) + '</td><td class="c">' + r + ' / ' + l.length + '</td><td class="c">' + Math.round(r / l.length * 100) + '</td></tr>';
+    }).join('') + '</table></div>';
+  }
+  var weak = ALL.filter(function (it) { return val(it) === 0; });
+  h += '<h2 class="sec">Потребує повторення (' + weak.length + ')</h2>' + (weak.length ? '<p class="hint">Відкрийте потрібну вкладку й оберіть фільтр «Лише помилки / «повторити»».</p><ul>' + weak.slice(0, 60).map(function (it) {
+    return '<li>' + esc((TABS.filter(function (t) { return t[0] === it.k; })[0] || [0, ''])[1]) + ': ' + esc(String(it.q || it.title).slice(0, 110)) + '…</li>';
+  }).join('') + '</ul>' + (weak.length > 60 ? '<p class="hint">…та ще ' + (weak.length - 60) + '.</p>' : '') : '<p class="hint">Позначених завдань немає.</p>');
+  h += '<p class="hint">Шкала: 90–100 % — «відмінно», 75–89 % — «добре», 60–74 % — «задовільно».</p>';
+  return h;
+}
+function updateScore() {
+  var r = 0; ALL.forEach(function (it) { if (val(it) === 1) r++; });
+  $('score').textContent = r + ' / ' + ALL.length;
+  $('bar').style.width = (ALL.length ? r / ALL.length * 100 : 0) + '%';
+}
+
+// ---------- події
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest ? ev.target.closest('[data-a],[data-tab]') : null; if (!b) return;
+  if (b.tagName === 'SELECT') return;
+  if (b.getAttribute('data-tab')) { tab = b.getAttribute('data-tab'); S._tab = tab; save(); filt = 'all'; shown = PAGE; renderNav(); render(); window.scrollTo(0, 0); return; }
+  var a = b.getAttribute('data-a'), id = b.getAttribute('data-id'), it = byId[id], i = +b.getAttribute('data-i');
+  switch (a) {
+    case 'show': S['o' + id] = S['o' + id] ? 0 : 1; if (!S['o' + id]) delete S['o' + id]; save(); refreshCard(id); break;
+    case 'mark': var v = +b.getAttribute('data-v'); if (S['m' + id] === v) delete S['m' + id]; else S['m' + id] = v;
+      var ta = document.querySelector('textarea[data-id="' + id + '"]'); if (ta) S['x' + id] = ta.value; save(); refreshCard(id); break;
+    case 'pick': S['t' + id] = i; save(); refreshCard(id); break;
+    case 'retry': delete S['t' + id]; save(); refreshCard(id); break;
+    case 'tog': var s = S['s' + id] || [], k = s.indexOf(i); if (k >= 0) s.splice(k, 1); else s.push(i); S['s' + id] = s; save(); refreshCard(id); break;
+    case 'mcheck': var s2 = (S['s' + id] || []).slice().sort(), c2 = it.correct.slice().sort();
+      if (!s2.length) { alertHint(b, 'Позначте хоча б одне твердження.'); break; }
+      S['r' + id] = s2.join() === c2.join() ? 1 : 0; save(); refreshCard(id); break;
+    case 'mreset': delete S['s' + id]; delete S['r' + id]; save(); refreshCard(id); break;
+    case 'xcheck': var an = S['s' + id] || {}, ok = 1;
+      for (var q = 0; q < it.pairs.length; q++) { if (an[q] !== L[it.order.indexOf(q)]) ok = 0; }
+      S['r' + id] = ok; save(); refreshCard(id); break;
+    case 'xreset': delete S['s' + id]; delete S['r' + id]; save(); refreshCard(id); break;
+    case 'more': shown += PAGE; rerender(); break;
+    case 'shuffle': var o = {}; shuffleArr(K[tab].map(function (x) { return x.id; })).forEach(function (x, j) { o[x] = j; }); order[tab] = o; shown = PAGE; render(); break;
+    case 'mode': mode = b.getAttribute('data-v'); render(); break;
+    case 'exstart':
+      var pool = shuffleArr(K.tests.filter(inTopic).slice()), n = +$('exN').value;
+      exam = { t0: Date.now(), items: pool.slice(0, n).map(function (x) { var perm = shuffleArr(x.opts.map(function (_, j) { return j; })); return { id: x.id, perm: perm, correct: perm.indexOf(x.correct) }; }) };
+      render(); window.scrollTo(0, 0); break;
+    case 'expick': exam.items[+b.getAttribute('data-n')].ch = i; rerender(); break;
+    case 'exfin':
+      var un = exam.items.filter(function (e) { return e.ch === undefined; }).length;
+      if (un && !confirm('Без відповіді залишилося ' + un + '. Завершити іспит?')) break;
+      exam.fin = 1; var m = Math.round((Date.now() - exam.t0) / 60000); exam.time = 'час: ' + m + ' хв';
+      var rr = exam.items.filter(function (e) { return e.ch === e.correct; }).length;
+      S._last = rr + ' / ' + exam.items.length + ' (' + Math.round(rr / exam.items.length * 100) + ' %), ' + new Date().toLocaleDateString('uk-UA'); save();
+      render(); window.scrollTo(0, 0); break;
+    case 'exwrong': exam.onlyWrong = !exam.onlyWrong; render(); break;
+    case 'exnew': case 'exquit': if (a === 'exquit' && !confirm('Вийти з іспиту без результату?')) break; exam = null; render(); break;
+  }
+});
+function alertHint(b, t) { var p = b.parentNode.querySelector('.hint'); if (!p) { p = document.createElement('p'); p.className = 'hint'; b.parentNode.appendChild(p); } p.textContent = t; }
+document.addEventListener('change', function (ev) {
+  var e = ev.target, a = e.getAttribute('data-a');
+  if (a === 'topic') { topic = e.value; S._topic = topic; save(); shown = PAGE; exam = null; renderNav(); render(); }
+  else if (a === 'filt') { filt = e.value; shown = PAGE; render(); }
+  else if (a === 'msel') { var id = e.getAttribute('data-id'), s = S['s' + id] || {}; s[e.getAttribute('data-i')] = e.value; S['s' + id] = s; save(); }
+  else if (e.tagName === 'TEXTAREA') { S['x' + e.getAttribute('data-id')] = e.value; save(); }
+});
+document.addEventListener('input', function (ev) { var e = ev.target; if (e.tagName === 'TEXTAREA') { S['x' + e.getAttribute('data-id')] = e.value; save(); } });
+
+// ---------- запуск
+$('brandTitle').textContent = M.title;
+$('brandSmall').textContent = (M.subtitle ? M.subtitle + ' · ' : '') + ALL.length + ' завдань';
+updLinks();
+$('resetBtn').onclick = function () { if (confirm('Скинути всі позначки, відповіді й збережені рецепти?')) { var t = S._tab; S = { _tab: t }; save(); exam = null; render(); } };
+$('themeBtn').onclick = function () {
+  var cur = document.documentElement.getAttribute('data-theme'), next = cur === 'dark' ? 'light' : cur === 'light' ? '' : 'dark';
+  if (next) document.documentElement.setAttribute('data-theme', next); else document.documentElement.removeAttribute('data-theme');
+  try { localStorage.setItem(KEY + '-theme', next); } catch (e) {}
+};
+try { var th = localStorage.getItem(KEY + '-theme'); if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) {}
+$('nojs').className = 'hidden'; $('app').className = '';
+function hh() { document.documentElement.style.setProperty('--hh', ($('hdr').offsetHeight + 8) + 'px'); }
+window.addEventListener('resize', hh);
+renderNav(); render(); hh();
+})();
+</script>
+</body>
+</html>
