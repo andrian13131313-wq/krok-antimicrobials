@@ -105,13 +105,13 @@ input:focus,select:focus{outline:none;border-color:var(--navy)}
 <!-- ======== НАЛАШТУВАННЯ (здобувач) ======== -->
 <div id="scr-setup" class="card">
  <h2>Налаштування тестування</h2>
- <p class="lead">Завдання відбираються з банку до навчального посібника «Лікарські засоби, що впливають на гомеостаз організму людини та обмінні процеси»; питання й варіанти відповідей перемішуються. Зірочкою * позначено завдання, наведені в тексті посібника.</p>
+ <p class="lead">Завдання відбираються з банку до навчального посібника «Лікарські засоби, що впливають на гомеостаз організму людини та обмінні процеси»; питання й варіанти відповідей перемішуються. Можна обрати всі розділи або від 1 до 3 розділів (груп), а потім — формат і кількість завдань. Зірочкою * позначено завдання, наведені в тексті посібника.</p>
  <div class="lbl">Дані здобувача освіти</div>
  <div class="row2"><input id="stName" type="text" placeholder="Прізвище та ім'я" autocomplete="name"><input id="stGroup" type="text" placeholder="Група (напр. 2-А)"></div>
  <div class="err" id="idErr"></div>
  <div id="lockedBox" class="locked hidden"></div>
  <div id="freeBox">
-  <div class="lbl">1. Розділ</div><div class="opts-grid g4" id="secTiles"></div>
+  <div class="lbl">1. Розділ — «Усі розділи» або від 1 до 3 розділів на вибір</div><div class="opts-grid g4" id="secTiles"></div><div class="small" id="secHint" style="margin-top:6px"></div>
   <div class="lbl">2. Формат тесту</div><div class="opts-grid g3" id="fmtTiles"></div>
   <div id="sizeWrap"><div class="lbl">3. Кількість завдань</div><div class="opts-grid g5" id="sizeTiles"></div></div>
   <div class="lbl">4. Режим швидкості</div><div class="opts-grid g3" id="modeTiles"></div>
@@ -152,7 +152,7 @@ input:focus,select:focus{outline:none;border-color:var(--navy)}
  <h2>Посилання для групи</h2>
  <p class="lead">Задайте параметри — отримаєте окреме посилання (і QR-код) для кожного варіанта. Здобувачі з однаковим варіантом отримують той самий набір завдань у різному порядку; налаштування для них заблоковано.</p>
  <div class="lbl">Група</div><input id="tGroup" type="text" placeholder="напр. 2-А (необов'язково)">
- <div class="lbl">Розділ</div><select id="tSec"></select>
+ <div class="lbl">Розділ (утримуйте Ctrl, щоб обрати до 3 розділів; без вибору — усі розділи)</div><select id="tSec" multiple size="11"></select>
  <div class="lbl">Склад тесту (кількість завдань кожного типу)</div>
  <div class="opts-grid g4">
   <label class="small">Одиничний вибір<input id="tN0" type="number" min="0" value="18"></label>
@@ -184,7 +184,12 @@ var TTL = "ЛЗ, що впливають на гомеостаз";
 var SECS = [[0, "Усі розділи"], ["k1", "1. Система крові"], ["k21", "2.1. Гормони гіпофіза, щитоподібної, підшлункової залоз"], ["k22", "2.2. Кора надниркових залоз, стреспротектори"], ["k23", "2.3. Статеві гормони, контрацептиви"], ["k3", "3. Вітаміни"], ["k4", "4. НПЗЗ"], ["k5", "5. Протиалергічні та імунотропні"], ["k6", "6. Електроліти, глюкоза, інфузійні розчини"], ["k7", "7. Гострі отруєння"]];
 var SECN = {}; SECS.forEach(function(x){SECN[x[0]]=x[1];});
 function kq(k){return typeof k==='string'?"'"+k+"'":k;}
-function secOf(v){return (v in SECN)?(isNaN(+v)?v:+v):0;}
+var MAXSEL=3;
+function secOf(v){v=String(v==null?'':v);var l=v.split(',').filter(function(k){return k&&k!=='0'&&(k in SECN);});l=l.filter(function(k,i){return l.indexOf(k)===i;}).slice(0,MAXSEL);return l.length?l.join(','):0;}
+function secList(sec){return sec?String(sec).split(','):[];}
+function secName(sec){return sec?secList(sec).map(function(k){return SECN[k];}).join(' + '):SECN[0];}
+function togSec(k){if(!k){S.sec=0;}else{var l=secList(S.sec),i=l.indexOf(k);if(i>=0)l.splice(i,1);else{if(l.length>=MAXSEL)return;l.push(k);}S.sec=l.length?l.join(','):0;}
+ var ns=pool('s',S.sec).length;if(S.size>ns)S.size=0;renderSetup();}
 var TYPEN = ['Одиничний вибір','Множинний вибір','Відповідність','Клінічна віньєтка'];
 var TYPEK = ['s','m','x','c'], TW = [1,1.5,2,1.5];
 var FORMATS = [
@@ -200,7 +205,7 @@ var LTR='АБВГДЕЄЖЗ';
 function hashStr(s){var h=1779033703^s.length;for(var i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19;}return function(){h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return (h^=h>>>16)>>>0;};}
 function rng(seed){var a=hashStr(seed)();return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function shuffle(a,r){r=r||Math.random;for(var i=a.length-1;i>0;i--){var k=Math.floor(r()*(i+1));var t=a[i];a[i]=a[k];a[k]=t;}return a;}
-function pool(t,sec){return BANK.filter(function(q){return q.t===t&&(!sec||q.r===sec);});}
+function pool(t,sec){var l=secList(sec);return BANK.filter(function(q){return q.t===t&&(!l.length||l.indexOf(q.r)>=0);});}
 function plural(n,f){return (n%10===1&&n%100!==11)?f[0]:(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?f[1]:f[2];}
 function fmtT(s){s=Math.max(0,Math.round(s));var m=Math.floor(s/60);s%=60;return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;}
 
@@ -215,11 +220,13 @@ function effComp(){var c=compNow();return c.map(function(n,i){return Math.min(n,
 function totalTime(c){var t=0;c.forEach(function(n,i){t+=n*TW[i]*S.per;});return t;}
 function tiles(id,items,cls){document.getElementById(id).innerHTML=items.map(function(x){return '<div class="tile'+(x.on?' on':'')+(x.off?' off':'')+'" onclick="'+x.f+'"><b>'+x.b+'</b><span>'+x.s+'</span></div>';}).join('');}
 function renderSetup(){
- tiles('secTiles',SECS.map(function(x){var k=x[0];var n=BANK.filter(function(q){return !k||q.r===k;}).length;return{b:x[1],s:n+' '+plural(n,['завдання','завдання','завдань']),on:S.sec===k,f:'S.sec='+kq(k)+';renderSetup()'};}));
+ var sl=secList(S.sec);
+ tiles('secTiles',SECS.map(function(x){var k=x[0];var n=BANK.filter(function(q){return !k||q.r===k;}).length;return{b:(k&&sl.indexOf(k)>=0?'✓ ':'')+x[1],s:n+' '+plural(n,['завдання','завдання','завдань']),on:k?sl.indexOf(k)>=0:!sl.length,off:k&&sl.length>=MAXSEL&&sl.indexOf(k)<0,f:'togSec('+kq(k)+')'};}));
+ var hn=document.getElementById('secHint'),nb=BANK.filter(function(q){return !sl.length||sl.indexOf(q.r)>=0;}).length;hn.textContent=sl.length?'Обрано '+sl.length+' з '+MAXSEL+(sl.length>=MAXSEL?' (максимум; щоб замінити розділ, зніміть позначку з одного з обраних)':'')+': '+secName(S.sec)+' — у банку '+nb+' '+plural(nb,['завдання','завдання','завдань'])+'.':'Обрано всі розділи. Щоб скласти тест з окремих груп, позначте від 1 до '+MAXSEL+' розділів.';
  tiles('fmtTiles',FORMATS.map(function(f){return{b:f.name,s:f.desc,on:S.fmt===f.id,f:"S.fmt='"+f.id+"';renderSetup()"};}));
  var ns=pool('s',S.sec).length;
  document.getElementById('sizeWrap').classList.toggle('hidden',S.fmt!=='krok');
- tiles('sizeTiles',SIZES.map(function(n){return{b:n<0?ns:n,s:n<0?'усі питання розділу':plural(n,['питання','питання','питань']),on:S.size===n,off:n>0&&n>ns,f:'S.size='+n+';renderSetup()'};}));
+ tiles('sizeTiles',SIZES.map(function(n){return{b:n<0?ns:n,s:n<0?(S.sec?'усі питання обраних розділів':'усі питання'):plural(n,['питання','питання','питань']),on:S.size===n,off:n>0&&n>ns,f:'S.size='+n+';renderSetup()'};}));
  tiles('modeTiles',[[60,'🟢 Норм'],[45,'🟠 Турбо'],[30,'🔴 Хард']].map(function(m){return{b:m[1],s:m[0]+' с на завдання',on:S.per===m[0],f:'S.per='+m[0]+';renderSetup()'};}));
  var c=effComp(),n=c.reduce(function(a,b){return a+b;},0),btn=document.getElementById('startBtn');
  if(S.fmt==='krok'&&!S.size&&!S.locked){btn.disabled=true;btn.textContent='Оберіть кількість питань ↑';return;}
@@ -236,7 +243,7 @@ function readParams(){
  if(S.locked){
   document.getElementById('freeBox').classList.add('hidden');
   var c=effComp(),n=c.reduce(function(a,b){return a+b;},0),b=document.getElementById('lockedBox');b.classList.remove('hidden');
-  b.innerHTML='<b>Налаштування викладача</b>'+(S.title?' · '+esc(S.title):'')+'<br>Розділ: '+SECN[S.sec]+' · Варіант: <b>'+(S.variant||'—')+'</b><br>Склад: '+
+  b.innerHTML='<b>Налаштування викладача</b>'+(S.title?' · '+esc(S.title):'')+'<br>'+(secList(S.sec).length>1?'Розділи':'Розділ')+': '+secName(S.sec)+' · Варіант: <b>'+(S.variant||'—')+'</b><br>Склад: '+
    c.map(function(k,i){return k?TYPEN[i].toLowerCase()+' — '+k:'';}).filter(Boolean).join('; ')+'<br>Усього '+n+' '+plural(n,['завдання','завдання','завдань'])+', час — '+fmtT(totalTime(c))+' хв';
   if(P.has('g')) document.getElementById('stGroup').readOnly=true;
  }
@@ -248,9 +255,12 @@ function buildItems(variant, seedExtra){
  var c=effComp(), out=[];
  var key=S.sec+'|'+c.join('-')+'|'+variant;
  c.forEach(function(n,i){
-  var pl=pool(TYPEK[i],S.sec).slice();
-  var r=variant?rng('sel|'+key+'|'+i):Math.random;
-  shuffle(pl,r); out=out.concat(pl.slice(0,n));
+  var r=variant?rng('sel|'+key+'|'+i):Math.random, sl=secList(S.sec);
+  if(sl.length>1){ // рівномірно з кожного обраного розділу (почергово)
+   var ps=sl.map(function(k){return shuffle(pool(TYPEK[i],k).slice(),r);}),got=[],j=0;
+   while(got.length<n&&ps.some(function(x){return x.length;})){var x=ps[j%ps.length];if(x.length)got.push(x.shift());j++;}
+   out=out.concat(got);
+  } else {var pl=pool(TYPEK[i],S.sec).slice(); shuffle(pl,r); out=out.concat(pl.slice(0,n));}
  });
  return out;
 }
@@ -322,7 +332,7 @@ function finish(timeUp){if(FIN)return;FIN=true;clearInterval(timer);closeModal()
  document.getElementById('resBy').innerHTML=rows;
  document.getElementById('review').innerHTML=ITEMS.map(review).join('');
  var used=(Date.now()-started)/1000;
- send({name:ST.name,group:ST.group,section:TTL+' / '+SECN[S.sec]+(S.title?' / '+S.title:''),total:tot,correct:Math.round(sum*10)/10,wrong:bad,unanswered:no,pct:pct,
+ send({name:ST.name,group:ST.group,section:TTL+' / '+secName(S.sec)+(S.title?' / '+S.title:''),total:tot,correct:Math.round(sum*10)/10,wrong:bad,unanswered:no,pct:pct,
   pass:pass?'ЗАЛІК':'НЕЗАРАХОВАНО',grade5:g5,mode:(S.locked?'за посиланням викладача, ':'')+S.per+' с/завд.',timeUsed:fmtT(used)+' хв',timeUp:!!timeUp,
   bySection:secTxt.join('; '),clientTime:new Date().toLocaleString('uk-UA'),variant:S.variant?String(S.variant):'індивідуальний',byType:typTxt.join('; '),leaves:leaves});
 }
@@ -341,11 +351,11 @@ function send(d){var el=document.getElementById('sendSt');window.LAST=d;
 /* ---------- викладач ---------- */
 function showTeacher(){['scr-setup','scr-test','scr-result'].forEach(function(id){document.getElementById(id).classList.add('hidden');});document.getElementById('scr-teacher').classList.remove('hidden');
  var s=document.getElementById('tSec');s.innerHTML=SECS.map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join('');s.onchange=avail;avail();}
-function tsec(){return secOf(document.getElementById('tSec').value);}
-function avail(){var sec=tsec();document.getElementById('tAvail').textContent='Доступно в банку: '+TYPEK.map(function(t,i){return TYPEN[i].toLowerCase()+' — '+pool(t,sec).length;}).join('; ')+'.';}
+function tsec(){var o=[].slice.call(document.getElementById('tSec').selectedOptions).map(function(x){return x.value;});return o.indexOf('0')>=0?0:secOf(o.join(','));}
+function avail(){var sec=tsec(),o=document.getElementById('tSec');[].slice.call(o.selectedOptions).forEach(function(x){if(sec&&secList(sec).indexOf(x.value)<0)x.selected=false;});document.getElementById('tAvail').textContent=secName(sec)+'. Доступно в банку: '+TYPEK.map(function(t,i){return TYPEN[i].toLowerCase()+' — '+pool(t,sec).length;}).join('; ')+'.';}
 function linkFor(v){var base=location.href.split('?')[0].split('#')[0];
  var c=[0,1,2,3].map(function(i){return +document.getElementById('tN'+i).value||0;}).join('-');
- var q='?lock=1&v='+v+'&sec='+document.getElementById('tSec').value+'&c='+c+'&per='+document.getElementById('tSecPer').value;
+ var q='?lock=1&v='+v+'&sec='+encodeURIComponent(tsec())+'&c='+c+'&per='+document.getElementById('tSecPer').value;
  var g=document.getElementById('tGroup').value.trim(),w=document.getElementById('tTitle').value.trim();
  if(g)q+='&g='+encodeURIComponent(g);if(w)q+='&w='+encodeURIComponent(w);return base+q;}
 function makeLinks(){var n=Math.min(12,Math.max(1,+document.getElementById('tVar').value||1)),h='',qr=document.getElementById('tQr');qr.innerHTML='';
@@ -356,7 +366,7 @@ function makeLinks(){var n=Math.min(12,Math.max(1,+document.getElementById('tVar
 function copyL(b,v){var u=linkFor(v);(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){b.textContent='Скопійовано';},function(){prompt('Скопіюйте посилання:',u);});}
 function printVar(v){var sec=tsec(),c=[0,1,2,3].map(function(i){return +document.getElementById('tN'+i).value||0;});
  var keep={sec:S.sec,comp:S.comp};S.sec=sec;S.comp=c;var list=buildItems(v);S.sec=keep.sec;S.comp=keep.comp;
- var r=rng('paper|'+v),h='<h1>Контрольна робота: '+TTL+'</h1><p>'+SECN[sec]+' · Варіант '+v+(document.getElementById('tTitle').value?' · '+esc(document.getElementById('tTitle').value):'')+'</p><p>Прізвище, ім’я ____________________________ Група ________</p>',key='<div class="key"><h3>Ключ відповідей — варіант '+v+'</h3><ol>';
+ var r=rng('paper|'+v),h='<h1>Контрольна робота: '+TTL+'</h1><p>'+secName(sec)+' · Варіант '+v+(document.getElementById('tTitle').value?' · '+esc(document.getElementById('tTitle').value):'')+'</p><p>Прізвище, ім’я ____________________________ Група ________</p>',key='<div class="key"><h3>Ключ відповідей — варіант '+v+'</h3><ol>';
  list.forEach(function(q,i){var it=prepare(q,r);h+='<div class="pq"><b>'+(i+1)+'.</b> '+(q.t!=='s'?'['+TYPEN[TYPEK.indexOf(q.t)]+'] ':'')+(q.t==='c'?esc(q.v)+' ':'')+esc(q.q);
   if(q.t==='s'||q.t==='c'){h+='<br>'+it.order.map(function(o,k){return LTR[k]+'. '+esc(q.o[o]);}).join('<br>');key+='<li>'+LTR[it.order.indexOf(0)]+'</li>';}
   if(q.t==='m'){h+='<br>'+it.order.map(function(o,k){return LTR[k]+'. '+esc(q.o[o]);}).join('<br>');key+='<li>'+q.k.map(function(o){return LTR[it.order.indexOf(o)];}).sort().join(', ')+'</li>';}
