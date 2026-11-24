@@ -274,7 +274,7 @@ function startTest(){
  document.getElementById('scr-setup').classList.add('hidden');document.getElementById('scr-test').classList.remove('hidden');
  document.getElementById('totCnt').textContent=ITEMS.length;
  tick(); timer=setInterval(tick,50); go(0);
- document.addEventListener('visibilitychange',function(){if(document.hidden&&!FIN)leaves++;});
+ if(window.GUARD)GUARD.arm();
  window.onbeforeunload=function(){if(!FIN)return 'Тестування не завершено';};
 }
 function tick(){var ms=Math.max(0,deadline-Date.now()),cs=Math.floor(ms/10),m=Math.floor(cs/6000),s=Math.floor(cs%6000/100),c=cs%100,el=document.getElementById('clock');
@@ -305,7 +305,7 @@ function scoreOf(it){var q=it.q;
  if(q.t==='s'||q.t==='c') return it.ans===0?1:0;
  if(q.t==='m'){var good=0,bad=0;it.ans.forEach(function(o){if(q.k.indexOf(o)>=0)good++;else bad++;});return Math.max(0,(good-bad)/q.k.length);}
  if(q.t==='x'){var g=0;it.ans.forEach(function(a,k){if(a===k)g++;});return g/q.p.length;}}
-function finish(timeUp){if(FIN)return;FIN=true;clearInterval(timer);closeModal();window.onbeforeunload=null;
+function finish(timeUp){if(FIN)return;FIN=true;if(window.GUARD)GUARD.done();clearInterval(timer);closeModal();window.onbeforeunload=null;
  var tot=ITEMS.length,sum=0,ok=0,bad=0,no=0,bySec={},byType={};
  ITEMS.forEach(function(it){var s=scoreOf(it);it.sc=s;sum+=s;if(!answered(it))no++;else if(s>=0.999)ok++;else bad++;
   var a=bySec[it.q.r]=bySec[it.q.r]||[0,0];a[0]+=s;a[1]++;var b=byType[it.q.t]=byType[it.q.t]||[0,0];b[0]+=s;b[1]++;});
@@ -323,8 +323,8 @@ function finish(timeUp){if(FIN)return;FIN=true;clearInterval(timer);closeModal()
  document.getElementById('review').innerHTML=ITEMS.map(review).join('');
  var used=(Date.now()-started)/1000;
  send({name:ST.name,group:ST.group,section:TTL+' / '+SECN[S.sec]+(S.title?' / '+S.title:''),total:tot,correct:Math.round(sum*10)/10,wrong:bad,unanswered:no,pct:pct,
-  pass:pass?'ЗАЛІК':'НЕЗАРАХОВАНО',grade5:g5,mode:(S.locked?'за посиланням викладача, ':'')+S.per+' с/завд.',timeUsed:fmtT(used)+' хв',timeUp:!!timeUp,
-  bySection:secTxt.join('; '),clientTime:new Date().toLocaleString('uk-UA'),variant:S.variant?String(S.variant):'індивідуальний',byType:typTxt.join('; '),leaves:leaves});
+  pass:pass?'ЗАЛІК':'НЕЗАРАХОВАНО',grade5:g5,mode:(S.locked?'за посиланням викладача, ':'')+S.per+' с/завд.'+(window.GUARD?GUARD.note():''),timeUsed:fmtT(used)+' хв',timeUp:!!timeUp,
+  bySection:secTxt.join('; '),clientTime:new Date().toLocaleString('uk-UA'),variant:S.variant?String(S.variant):'індивідуальний',byType:typTxt.join('; '),leaves:(window.GUARD?GUARD.count():leaves)});
 }
 function review(it,i){var q=it.q,cls=it.sc>=0.999?'okk':it.sc>0?'part':'bad',h='<div class="rv '+cls+'"><div class="q">'+(i+1)+(q.s?'*':'')+'. '+(q.t==='c'?esc(q.v)+' ':'')+esc(q.q)+'</div>';
  if(q.t==='s'||q.t==='c'){h+='<div class="a">Ваша відповідь: '+(it.ans===null?'<i>немає</i>':'<span class="'+(it.ans===0?'good':'wrong')+'">'+esc(q.o[it.ans])+'</span>')+'</div>';if(it.ans!==0)h+='<div class="a">Правильна: <span class="good">'+esc(q.o[0])+'</span></div>';}
@@ -368,5 +368,99 @@ readParams(); renderSetup();
 if(P.get('teacher')==='1') showTeacher();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" async></script>
+<script>
+window.GUARD_ADAPTER={running:function(){return !!(ITEMS&&ITEMS.length&&started&&!FIN);},finish:function(){finish(false);},
+ who:function(){return {name:ST.name,group:ST.group};},title:function(){try{if(S.secs)return TTL+' / '+secName(S.secs);if(typeof secName==='function')return TTL+' / '+secName(S.sec);return TTL+' / '+(SECN[S.sec]||'');}catch(e){return TTL;}},
+ url:function(){return SHEET_URL;},variant:function(){return S.variant?String(S.variant):'індивідуальний';}};
+</script>
+<script>
+/* ===== Режим тестування (GUARD v1): облік виходів зі сторінки, попередження, автоматичне завершення ===== */
+(function(){
+ var P=new URLSearchParams(location.search);
+ var CFG={warnAt:1,killAt:Math.max(1,parseInt(P.get('viol'))||3),minSec:Math.max(1,parseInt(P.get('vsec'))||3)};
+ var A=window.GUARD_ADAPTER, KEY='guard:'+location.pathname;
+ var on=false,cnt=0,shortCnt=0,hiddenAt=0,killed=false,events=[],armedAt=0,fsWarned=false;
+ function ls(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
+ function sec(ms){return Math.round(ms/1000);}
+ function report(text){
+  var url=A.url();if(!url)return;var w=A.who();
+  var d={name:w.name,group:w.group,section:'⚠ ПОРУШЕННЯ режиму: '+text+' — '+A.title(),total:0,mode:'подія під час тесту',
+   clientTime:new Date().toLocaleString('uk-UA'),variant:A.variant(),leaves:cnt};
+  var u=url+(url.indexOf('?')<0?'?':'&')+'d='+encodeURIComponent(JSON.stringify(d));
+  try{fetch(u,{method:'GET',mode:'no-cors',cache:'no-store',keepalive:true}).catch(function(){var i=new Image();i.src=u;});}catch(e){var i=new Image();i.src=u;}
+ }
+ function save(){ls(KEY,{on:on,cnt:cnt,who:A.who(),t:Date.now()});}
+ function css(){if(document.getElementById('gdCss'))return;var s=document.createElement('style');s.id='gdCss';
+  s.textContent='#gdBox{position:fixed;inset:0;z-index:99999;background:rgba(40,0,0,.72);display:flex;align-items:center;justify-content:center;padding:16px}'+
+  '#gdBox .b{background:#fff;max-width:460px;width:100%;border-radius:14px;padding:22px 20px;border-top:8px solid #C00000;font:15px/1.5 system-ui,sans-serif;color:#22282f;box-shadow:0 10px 40px rgba(0,0,0,.4)}'+
+  '#gdBox h3{margin:0 0 8px;color:#C00000;font-size:19px}#gdBox .n{font-size:30px;font-weight:800;color:#C00000;margin:6px 0}'+
+  '#gdBox button{margin-top:14px;width:100%;border:0;border-radius:10px;padding:12px;font-weight:700;font-size:15px;background:#1F4E79;color:#fff;cursor:pointer}'+
+  '.gd-noselect,.gd-noselect *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}'+
+  '.gd-rule{margin-top:8px;padding:8px 10px;border-left:4px solid #C00000;background:#fff3f3;border-radius:0 8px 8px 0;font-size:13px;color:#5a1a1a}';
+  document.head.appendChild(s);}
+ function box(title,num,text,btn,cb){css();var o=document.getElementById('gdBox');if(o)o.remove();o=document.createElement('div');o.id='gdBox';
+  o.innerHTML='<div class="b" role="alertdialog"><h3>'+title+'</h3>'+(num?'<div class="n">'+num+'</div>':'')+'<div>'+text+'</div><button type="button">'+btn+'</button></div>';
+  document.body.appendChild(o);o.querySelector('button').onclick=function(){o.remove();if(cb)cb();};}
+ function fs(){var el=document.documentElement;if(document.fullscreenElement||!el.requestFullscreen)return;
+  if(!/Android/i.test(navigator.userAgent))return; try{el.requestFullscreen({navigationUI:'hide'}).catch(function(){});}catch(e){}}
+ function violation(ms){
+  cnt++;save();var left=CFG.killAt-cnt;
+  events.push(sec(ms)+' с');report('вихід зі сторінки '+cnt+' з '+CFG.killAt+' ('+sec(ms)+' с)');
+  if(cnt>=CFG.killAt){kill();return;}
+  box(left===1?'⚠ Останнє попередження':'⚠ Порушення режиму тестування',cnt+' з '+CFG.killAt,
+   'Зафіксовано вихід зі сторінки тестування тривалістю '+sec(ms)+' с. Викладач отримав повідомлення.<br><br>'+
+   (left===1?'<b>Наступний вихід зі сторінки автоматично завершить тестування</b> з тими відповідями, які ви вже дали.':'Після '+CFG.killAt+'-го порушення тестування буде завершено автоматично.'),
+   'Зрозуміло, продовжити тест',fs);
+ }
+ function kill(){killed=true;on=false;ls(KEY,null);
+  try{A.finish();}catch(e){}
+  box('⛔ Тестування завершено','', 'Тестування автоматично завершено через порушення режиму (порушень: '+cnt+'). Зараховано лише відповіді, дані до завершення. Викладач отримав повідомлення.','Переглянути результат');}
+ document.addEventListener('visibilitychange',function(){
+  if(!on||!A.running())return;
+  if(document.hidden){hiddenAt=Date.now();save();}
+  else if(hiddenAt){var ms=Date.now()-hiddenAt;hiddenAt=0;if(ms>=CFG.minSec*1000)violation(ms);else{shortCnt++;}}
+ });
+ document.addEventListener('fullscreenchange',function(){
+  if(on&&A.running()&&!document.fullscreenElement&&!document.hidden&&!fsWarned){fsWarned=true;
+   box('Повноекранний режим вимкнено','', 'Будь ласка, поверніться в повноекранний режим. Перемикання на інші програми чи вкладки під час тесту фіксується як порушення.','Повернутися до тесту',function(){fsWarned=false;fs();});}
+ });
+ ['copy','cut','contextmenu'].forEach(function(ev){document.addEventListener(ev,function(e){if(on&&A.running())e.preventDefault();});});
+ window.addEventListener('pagehide',function(){if(on&&A.running()&&!killed){save();report('сторінку закрито або оновлено під час тесту');}});
+ window.addEventListener('beforeunload',function(e){if(on&&A.running()){e.preventDefault();e.returnValue='Тестування не завершено';return e.returnValue;}});
+ window.GUARD={
+  cfg:CFG,
+  arm:function(){
+   var prev=ls(KEY),w=A.who();ls('lbfmk:student',{name:w.name,group:w.group});
+   cnt=0;shortCnt=0;events=[];killed=false;
+   if(prev&&prev.on&&prev.who&&prev.who.name===w.name&&Date.now()-prev.t<3*3600e3){
+    cnt=(prev.cnt||0)+1;events.push('перезапуск');report('повторний початок тесту після закриття сторінки (зараховано як порушення '+cnt+' з '+CFG.killAt+')');
+   }
+   on=true;armedAt=Date.now();save();
+   document.body.classList.add('gd-noselect');var hb=document.getElementById('gdHome');if(hb)hb.style.display='none';fs();
+   if(cnt>=CFG.killAt){setTimeout(kill,300);}
+   else if(cnt>0){box('⚠ Повторний початок тесту',cnt+' з '+CFG.killAt,'Попередню спробу цього тесту було перервано (сторінку закрито або оновлено). Це зараховано як порушення режиму; викладач отримав повідомлення.','Зрозуміло, почати тест',fs);}
+  },
+  done:function(){history();var hb=document.getElementById('gdHome');if(hb)hb.style.display='';if(on){on=false;ls(KEY,null);document.body.classList.remove('gd-noselect');try{if(document.fullscreenElement)document.exitFullscreen();}catch(e){}}},
+  count:function(){return cnt;},
+  note:function(){var t='';if(cnt)t+=' · порушень режиму: '+cnt+(events.length?' ('+events.join(', ')+')':'');if(shortCnt)t+=' · коротких виходів (<'+CFG.minSec+' с): '+shortCnt;if(killed)t+=' · ЗАВЕРШЕНО АВТОМАТИЧНО ЧЕРЕЗ ПОРУШЕННЯ';return t;}
+ };
+ // спільні дані студента (застосунок «Тести ЛБФМК Марченко»): підстановка ПІБ і групи, історія результатів
+ function prefill(){var st=ls('lbfmk:student');if(!st)return;var n=document.getElementById('stName'),g=document.getElementById('stGroup');
+  if(n&&!n.value&&st.name)n.value=st.name;if(g&&!g.value&&st.group)g.value=st.group;}
+ function history(){setTimeout(function(){var d=window.LAST;if(!d||d.total===0)return;var h=ls('lbfmk:history')||[];
+  h.unshift({t:d.section,pct:d.pct,g:d.grade5,pass:d.pass,at:d.clientTime,viol:cnt,killed:killed});ls('lbfmk:history',h.slice(0,60));},400);}
+ // правило на екрані налаштування
+ function rule(){var r=document.querySelector('.rules');if(!r||document.querySelector('.gd-rule'))return;css();var d=document.createElement('div');d.className='gd-rule';
+  d.innerHTML='<b>Режим тестування.</b> Вихід зі сторінки тесту (перемикання на іншу програму чи вкладку, закриття або оновлення сторінки) довше '+CFG.minSec+' с фіксується як порушення й одразу надсилається викладачу. Після 1-го порушення — попередження, після '+CFG.killAt+'-го тест завершується автоматично. Перед початком увімкніть режим «Не турбувати».';
+  r.appendChild(d);}
+ function homeBtn(){var sa=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;if(!sa||document.getElementById('gdHome'))return;
+  var a=document.createElement('a');a.id='gdHome';a.href='/';a.textContent='⌂ До переліку тестів';
+  a.style.cssText='position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9999;background:#1F4E79;color:#fff;font:700 14px system-ui,sans-serif;padding:10px 14px;border-radius:22px;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.25)';
+  document.body.appendChild(a);}
+ function init(){rule();prefill();homeBtn();}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+</script>
 </body>
 </html>
